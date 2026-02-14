@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GroceryMate</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    
+    <a id="defaultTab" onclick="groceryTab(event, 'login')">Login</a>
+    <div class="sidenav">
+        <a href="#login" onclick="groceryTab(event, 'login')">Login</a>
+        <a href="#calendar" onclick="groceryTab(event, 'calendar')">Calendar</a>
+        <a href="#upload" onclick="groceryTab(event, 'recipeUpload')">Upload</a>
+        <a href="#shopping" onclick="groceryTab(event, 'groceryList')">Shopping List</a>
+    </div>
+
+<!-- Tab content -->
+
+<!-- Login -->
+    <div id="login" class="tabcontent">
+        <h1 id="head1"></h1>
+        <p id="para1"></p>
+        <label id="para2"></label>
+
+        <!--Login Boxes-->
+        <br>
+        <label>Username:</label>
+        <input id="myText"></input>
+
+        <br>
+        <label>Password:</label>
+        <input id="myText2" type="password"></input>
+        
+        <!--BUTTONS!-->        
+        <div id="buttons">
+            <button id="LogButt" class="butts">Login</button>
+        </div>
+        <!-- Sign Out Button (Hidden Initially) -->
+        <div id="buttons2" style="display:none;">
+            <button id="signOutBtn" class = "butts">Sign Out</button>
+        </div>
+    </div>
+
+<!-- Grocery List -->
+    <div id="groceryList" class="tabcontent">
+        <h3>Groceries</h3>
+        <p>Below is your current grocery list:</p>
+    </div>
+
+<!-- Upload -->
+    <div id="recipeUpload" class="tabcontent">
+        <h3>Upload Here</h3>
+        <p>
+            <input type="file" id="imageInput" accept="image/*">
+            <br><br>
+            <button onclick="extractText()">Extract Text</button>
+            <h3>Extracted Text:</h3>
+            <div id="output">Waiting for image...</div>
+        </p>
+    </div>
+
+<!-- Calendar -->
+    <div id="calendar" class="tabcontent">
+        <h3>Calendar</h3>
+        <p>Here we will organize a four week calendar of recipes</p>        
+    
+        <!-- Draggable Elements -->
+        <div id="container">
+            <div id="card">
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <script src="index.js"></script>
+</body>
+</html>
