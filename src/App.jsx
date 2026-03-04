@@ -98,7 +98,7 @@ export default function App() {
         className="w-full max-w-sm card p-8 space-y-8"
       >
         <div className="text-center space-y-2">
-          <h1 className="text-4xl font-serif font-bold">GroceryMate</h1>
+          <h1 className="text-4xl font-serif font-bold">KitchIndex</h1>
           <p className="text-sm text-gray-400 uppercase tracking-widest font-bold">Login to your account</p>
         </div>
 
@@ -151,7 +151,7 @@ export default function App() {
         className="w-full max-w-sm card p-8 space-y-8"
       >
         <div className="text-center space-y-2">
-          <h1 className="text-4xl font-serif font-bold">GroceryMate</h1>
+          <h1 className="text-4xl font-serif font-bold">KitchIndex</h1>
           <p className="text-sm text-gray-400 uppercase tracking-widest font-bold">Create your account</p>
         </div>
 
@@ -283,7 +283,7 @@ export default function App() {
       >
         <div className="text-center space-y-1">
           {/* main title */}
-          <h1 className="text-5xl font-serif font-bold tracking-tight home-title">GroceryMate</h1>
+          <h1 className="text-5xl font-serif font-bold tracking-tight home-title">KitchIndex</h1>
           {/* welcome message */}
           {user && (
             <h2 className="text-2xl font-sans font-medium text-gray-600 home-welcome">
