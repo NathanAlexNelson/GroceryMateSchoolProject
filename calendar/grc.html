@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Grocery Recipe Converter</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <!-- Left side: app title above month controls -->
+      <div class="brand">
+        <h1 class="app-title">Grocery Recipe Converter</h1>
+
+        <div class="month-controls">
+          <button id="prevMonth" type="button" aria-label="Previous month">←</button>
+          <h2 id="monthLabel" aria-live="polite">Month YYYY</h2>
+          <button id="nextMonth" type="button" aria-label="Next month">→</button>
+        </div>
+      </div>
+
+      <!-- Right side: actions -->
+      <div class="actions">
+        <button id="todayBtn" type="button">Today</button>
+        <button id="clearMonthBtn" type="button" class="danger">Clear month</button>
+      </div>
+    </header>
+
+    <main class="layout">
+      <section class="calendar" aria-label="Calendar">
+        <div class="dow">
+          <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+        </div>
+        <div id="grid" class="grid" role="grid" aria-label="Calendar grid"></div>
+      </section>
+
+      <aside class="sidebar" aria-label="Recipe sidebar">
+        <div class="sidebar-header">
+          <h2>Recipes</h2>
+          <p class="hint">Drag a card onto a day.</p>
+        </div>
+
+        <div class="recipe-list" id="recipeList">
+          <article class="recipe-card" draggable="true"
+            data-recipe-id="r1"
+            data-title="Chicken Tacos"
+            data-time="25 min">
+            <h3>Chicken Tacos</h3>
+            <p>25 min • Easy</p>
+            <div class="tags">
+              <span class="tag">Mexican</span>
+              <span class="tag">Weeknight</span>
+            </div>
+          </article>
+
+          <article class="recipe-card" draggable="true"
+            data-recipe-id="r2"
+            data-title="Salmon + Rice Bowl"
+            data-time="30 min">
+            <h3>Salmon + Rice Bowl</h3>
+            <p>30 min • Healthy</p>
+            <div class="tags">
+              <span class="tag">Seafood</span>
+              <span class="tag">Meal prep</span>
+            </div>
+          </article>
+
+          <article class="recipe-card" draggable="true"
+            data-recipe-id="r3"
+            data-title="Veggie Pasta"
+            data-time="20 min">
+            <h3>Veggie Pasta</h3>
+            <p>20 min • Quick</p>
+            <div class="tags">
+              <span class="tag">Vegetarian</span>
+              <span class="tag">Pantry</span>
+            </div>
+          </article>
+
+          <article class="recipe-card" draggable="true"
+            data-recipe-id="r4"
+            data-title="Beef Stir-Fry"
+            data-time="35 min">
+            <h3>Beef Stir-Fry</h3>
+            <p>35 min • One-pan</p>
+            <div class="tags">
+              <span class="tag">Asian</span>
+              <span class="tag">High protein</span>
+            </div>
+          </article>
+        </div>
+
+        <div class="sidebar-footer">
+          <p class="hint">Tip: Click a scheduled item to remove it.</p>
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
