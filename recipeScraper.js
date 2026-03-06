@@ -97,25 +97,6 @@
     };
   }
 
-  // Allow running as a simple CLI tool when executed with node
-  if (inNode && require.main === module) {
-    (async () => {
-      const query = process.argv.slice(2).join(' ');
-      if (!query) {
-        console.error('Usage: node recipeScraper.js <recipe name>');
-        process.exit(1);
-      }
-
-      try {
-        const list = await getGroceryListForRecipeName(query);
-        console.log(JSON.stringify(list, null, 2));
-      } catch (error) {
-        console.error(error);
-        process.exit(1);
-      }
-    })();
-  }
-
   return {
     searchRecipes,
     getRecipeIngredients,
@@ -123,3 +104,5 @@
     getGroceryListForRecipeName,
   };
 });
+
+
