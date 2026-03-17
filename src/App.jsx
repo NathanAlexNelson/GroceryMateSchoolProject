@@ -13,6 +13,7 @@ import {
   Trash2,
   Calendar as CalendarIcon
 } from 'lucide-react';
+import Calendar from './components/Calendar';
 
 export default function App() {
   const [view, setView] = useState('login');
@@ -22,10 +23,6 @@ export default function App() {
   const [manualInput, setManualInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [loginForm, setLoginForm] = useState({ username: '', password: '' });
-  // calendar state for dynamic month/year navigation
-  const [calendarDate, setCalendarDate] = useState(() => new Date());
-  const [selectedDateKey, setSelectedDateKey] = useState(null);
-
 
   useEffect(() => {
     if (user) fetchLists();
@@ -203,76 +200,6 @@ export default function App() {
       </motion.div>
     </div>
   );
-
-  const pad2 = n => String(n).padStart(2, '0');
-  const makeDateKey = (y, mZeroBased, d) => `${y}-${pad2(mZeroBased + 1)}-${pad2(d)}`;
-
-  const renderCalendar = () => {
-    const year = calendarDate.getFullYear();
-    const month = calendarDate.getMonth();
-    const firstDay = new Date(year, month, 1).getDay(); // 0 = Sun
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-    const monthName = calendarDate.toLocaleString('default', { month: 'long' });
-
-    const prevMonth = () => setCalendarDate(new Date(year, month - 1, 1));
-    const nextMonth = () => setCalendarDate(new Date(year, month + 1, 1));
-
-    const today = new Date();
-    const todayKey = makeDateKey(today.getFullYear(), today.getMonth(), today.getDate());
-
-    const days = [];
-    // leading empty cells
-    for (let i = 0; i < firstDay; i++) {
-      days.push(
-        <div key={`empty-${i}`} className="calendar-day empty" />
-      );
-    }
-    // actual days of current month
-    for (let d = 1; d <= daysInMonth; d++) {
-      const key = makeDateKey(year, month, d);
-      const isToday = key === todayKey;
-      const isSelected = key === selectedDateKey;
-      days.push(
-        <button
-          type="button"
-          key={key}
-          onClick={() => setSelectedDateKey(key)}
-          className={`calendar-day ${isToday ? 'today' : ''} ${isSelected ? 'selected' : ''}`}
-        >
-          <span className="text-sm font-medium" style={{ color: isSelected ? 'var(--accent-color)' : 'var(--gray-400)' }}>
-            {d}
-          </span>
-        </button>
-      );
-    }
-
-    return (
-      <div className="min-h-screen p-6">
-        <div className="max-w-4xl mx-auto space-y-8">
-          <button onClick={() => setView('home')} className="flex items-center gap-2 font-medium text-lg" style={{ color: 'var(--accent-color)' }}>
-            <ChevronLeft size={20} /> Back to Home
-          </button>
-
-          <div className="flex items-center justify-between">
-            <button onClick={prevMonth} className="text-4xl hover:opacity-70 transition-opacity px-4">&lt;</button>
-            <h2 className="text-5xl font-serif font-bold">
-              {monthName} {year}
-            </h2>
-            <button onClick={nextMonth} className="text-4xl hover:opacity-70 transition-opacity px-4">&gt;</button>
-          </div>
-
-          <div className="card p-8">
-            <div className="grid grid-cols-7 gap-4">
-              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                <div key={day} className="text-center font-bold text-gray-400 uppercase text-sm tracking-widest">{day}</div>
-              ))}
-              {days}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  };
 
   const renderHome = () => (
     <div className="flex flex-col items-center justify-center min-h-screen p-6">
@@ -539,7 +466,7 @@ export default function App() {
         {view === 'input' && <motion.div key="input" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>{renderInput()}</motion.div>}
         {view === 'list' && <motion.div key="list" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>{renderListView()}</motion.div>}
         {view === 'history' && <motion.div key="history" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>{renderHistory()}</motion.div>}
-        {view === 'calendar' && <motion.div key="calendar" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>{renderCalendar()}</motion.div>}
+        {view === 'calendar' && <motion.div key="calendar" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}><Calendar onBack={() => setView('home')} /></motion.div>}
       </AnimatePresence>
     </div>
   );
