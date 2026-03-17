@@ -107,8 +107,42 @@ export default function Calendar({ onBack }) {
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            justifyContent: 'center'
+            justifyContent: 'center',
+            position: 'relative'
           }}>
+
+            {/* X button */}
+            <div
+                onClick={(e) => {
+                    e.stopPropagation();
+                    setAssignedRecipes(prev => {
+                        const updated = { ...prev };
+                        delete updated[key];
+                        return updated;
+                    });
+                }}
+                style={{
+                    position: 'absolute',
+                    top: '-4px',
+                    right: '-4px',
+                    width: '16px',
+                    height: '16px',
+                    borderRadius: '50%',
+                    backgroundColor: 'grey',
+                    color: 'white',
+                    border: 'none',
+                    cursor: 'pointer',
+                    fontSize: '10px',
+                    fontWeight: 'bold',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center', 
+                    lineHeight: 1
+                }}
+            >
+                X
+            </div>
+
             <img
               src={assigned.image}
               alt={assigned.label}
