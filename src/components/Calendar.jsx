@@ -206,13 +206,17 @@ export default function Calendar({ onBack }) {
           </div>
 
           <div
-            className="card p-6 space-y-4 overflow-y-auto"
+            className="card p-6 space-y-4"
             style={{
               flex: '0 0 28%',
               maxHeight: '87vh',
               minHeight: '80vh',
               overflowY: 'auto',
-              overflowX: 'hidden'
+              overflowX: 'hidden',
+              scrollbarWidth: 'thin',
+              scrollbarColor: 'var(--accent-color) transparent',
+              borderRadius: '24px',
+              clipPath: 'inset(0 round 24px)'
             }}
           >
             <h3 className="font-serif font-bold text-xl" style={{ textAlign: 'center' }}>Recipes</h3>

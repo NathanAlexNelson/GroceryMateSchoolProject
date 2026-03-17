@@ -246,3 +246,18 @@ input, textarea {
 
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+.card::-webkit-scrollbar {
+  width: 4px;
+}
+
+.card::-webkit-scrollbar-track {
+  background: transparent;
+  margin-top: 12px;
+  margin-bottom: 12px;
+}
+
+.card::webkit-scrollbar-thumb {
+  background-color: var(--accent-color);
+  border-radius: 999px;
+}
