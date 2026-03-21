@@ -87,6 +87,23 @@ export default function App() {
     }
   };
 
+  const handleDeleteList = async (listId) => {
+    try {
+      await fetch(`/api/lists/${listId}`, {
+        method: 'DELETE'
+      });
+
+      // Remove the deleted list from the lists state
+      setLists(prev => prev.filter(list => list.id !== listId));
+
+      // Clear the current list and go back to history
+      setCurrentList(null);
+      setView('history');
+    } catch (e) {
+      console.error("Failed to delete list", e);
+    }
+  };
+
   const renderLogin = () => (
     <div className="flex flex-col items-center justify-center min-h-screen p-6">
       <motion.div 
@@ -252,7 +269,10 @@ export default function App() {
           </button>
 
           <button 
-            onClick={() => setView('history')}
+            onClick={() => {
+              fetchLists();
+              setView('history');
+              }}
             className="home-btn"
           >
             <div className="flex items-center gap-4">
@@ -356,7 +376,11 @@ export default function App() {
                 <ChevronLeft size={24} />
               </button>
               <h2 className="text-xl font-bold">{currentList.title}</h2>
-              <button className="p-2 icon-box text-red-500 hover-bg-gray-100" style={{ borderRadius: '9999px' }}>
+              <button 
+                onClick={() => handleDeleteList(currentList.id)}
+                className="p-2 icon-box text-red-500 hover-bg-gray-100" 
+                style={{ borderRadius: '9999px' }}
+              >
                 <Trash2 size={20} />
               </button>
             </div>

@@ -105,21 +105,39 @@ export default function Calendar({ onBack }) {
 
     const handleOpenPopup = () => {
         const grouped = {};
+
         multiSelectedDays.forEach(dayKey => {
             const recipe = assignedRecipes[dayKey];
-            if (recipe?.ingredientLines) {
-                recipe.ingredientLines.forEach(line => {
-                    if (!grouped[line]) grouped[line] = [];
-                    grouped[line].push(dayKey);
-                });
-            }
+            if (!recipe?.ingredients) return;
+
+            recipe.ingredients.forEach(ingredient => {
+                const food     = ingredient.food;
+                const quantity = ingredient.quantity || 0;
+                const measure  = ingredient.measure  || null;
+
+                if (!grouped[food]) {
+                    // First time seeing this ingredient — create an entry
+                    grouped[food] = { quantity, measure, food };
+                } else {
+                    // Already seen this ingredient — add to its quantity
+                    grouped[food].quantity += quantity;
+                }
+            });
         });
+
         setPopupIngredients(grouped);
         setShowIngredientPopup(true);
     };
 
     const handleSaveList = async () => {
-        const items = Object.keys(popupIngredients).map(name => ({ name }));
+        const items = Object.values(popupIngredients).map(info => {
+            const quantityStr = info.quantity % 1 === 0
+                ? info.quantity
+                : info.quantity.toFixed(2);
+            const measureStr = info.measure ? ` ${info.measure}` : '';
+            return { name: `${quantityStr}${measureStr} ${info.food}` };
+        });
+
         try {
             const res = await fetch('/api/lists', {
                 method: 'POST',
@@ -406,6 +424,7 @@ export default function Calendar({ onBack }) {
                                                     label: meal.label,
                                                     image: meal.image,
                                                     url: meal.url,
+                                                    ingredients: meal.ingredients,
                                                     ingredientLines: meal.ingredientLines
                                                 })}
                                                 onClick={() => setSelectedRecipe(isExpanded ? null : idx)}
@@ -546,7 +565,7 @@ export default function Calendar({ onBack }) {
                                     No ingredients found. Check your selected days have recipes.
                                 </p>
                             ) : (
-                                Object.entries(popupIngredients).map(([ingredient, days], idx) => (
+                                Object.entries(popupIngredients).map(([food, info], idx) => (
                                     <div
                                         key={idx}
                                         style={{
@@ -557,9 +576,10 @@ export default function Calendar({ onBack }) {
                                             borderBottom: '1px solid var(--gray-100)'
                                         }}
                                     >
-                                        <p className="text-sm font-medium">• {ingredient}</p>
+                                        <p className="text-sm font-medium">• {info.food}</p>
                                         <p className="text-xs text-gray-400" style={{ marginLeft: '12px', whiteSpace: 'nowrap' }}>
-                                            {days.length}x
+                                            {info.quantity % 1 === 0 ? info.quantity : info.quantity.toFixed(2)}
+                                            {info.measure ? ` ${info.measure}` : ``}
                                         </p>
                                     </div>
                                 ))
