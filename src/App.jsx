@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Plus, 
@@ -11,7 +11,11 @@ import {
   CheckCircle2, 
   Circle,
   Trash2,
-  Calendar as CalendarIcon
+  Calendar as CalendarIcon,
+  Download,
+  X,
+  Pencil,
+  Check
 } from 'lucide-react';
 import Calendar from './components/Calendar';
 import {runOCR } from './components/ocr';
@@ -32,9 +36,26 @@ export default function App() {
   const [ocrDraftTags, setOcrDraftTags] = useState([]);
   const [ocrTagInput, setOcrTagInput] = useState('');
 
+  // Editable input list state
+  const [parsedItems, setParsedItems] = useState([]);
+  const [listTitle, setListTitle] = useState('New Grocery List');
+  const [editingItemIdx, setEditingItemIdx] = useState(null);
+  const [editingItemValue, setEditingItemValue] = useState('');
+
+  const fileInputRef = useRef(null);
+
   useEffect(() => {
     if (user) fetchLists();
   }, [user]);
+
+  // Parse manual input into item list whenever it changes
+  useEffect(() => {
+    const items = manualInput
+      .split('\n')
+      .map(line => line.trim())
+      .filter(Boolean);
+    setParsedItems(items);
+  }, [manualInput]);
 
   const handleLogin = (e) => {
     e.preventDefault();
@@ -92,7 +113,6 @@ export default function App() {
       const lines = text.split('\n').filter(line => line.trim());
       const label = file.name.replace(/\.[^/.]+$/, '');
 
-      // Instead of saving immediately, open the edit modal
       setOcrDraftText(lines.join('\n'));
       setOcrDraftLabel(label);
       setShowOcrModal(true);
@@ -119,7 +139,6 @@ export default function App() {
     const ingredientLines = ocrDraftText.split('\n').filter(line => line.trim());
 
     try {
-      console.log('tags being sent:', ocrDraftTags);
       await fetch('/api/custom-recipes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -165,20 +184,76 @@ export default function App() {
 
   const handleDeleteList = async (listId) => {
     try {
-      await fetch(`/api/lists/${listId}`, {
-        method: 'DELETE'
-      });
-
-      // Remove the deleted list from the lists state
+      await fetch(`/api/lists/${listId}`, { method: 'DELETE' });
       setLists(prev => prev.filter(list => list.id !== listId));
-
-      // Clear the current list and go back to history
       setCurrentList(null);
       setView('history');
     } catch (e) {
       console.error("Failed to delete list", e);
     }
   };
+
+  // ── Export list as .txt ──────────────────────────────────────────────────────
+  const handleExportTxt = () => {
+    if (!currentList) return;
+    const lines = [
+      currentList.title,
+      '─'.repeat(40),
+      '',
+      ...(currentList.items?.map(item => {
+        const check = item.is_checked ? '[x]' : '[ ]';
+        const qty = item.quantity ? ` (${item.quantity})` : '';
+        return `${check} ${item.name}${qty}`;
+      }) || []),
+      '',
+      `─`.repeat(40),
+      `Exported: ${new Date().toLocaleDateString()}`
+    ];
+
+    const blob = new Blob([lines.join('\n')], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${currentList.title.replace(/\s+/g, '_')}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // ── Parsed item editing helpers ──────────────────────────────────────────────
+  const startEditItem = (idx) => {
+    setEditingItemIdx(idx);
+    setEditingItemValue(parsedItems[idx]);
+  };
+
+  const commitEditItem = (idx) => {
+    const updated = [...parsedItems];
+    if (editingItemValue.trim()) {
+      updated[idx] = editingItemValue.trim();
+    } else {
+      updated.splice(idx, 1);
+    }
+    setParsedItems(updated);
+    setManualInput(updated.join('\n'));
+    setEditingItemIdx(null);
+    setEditingItemValue('');
+  };
+
+  const removeItem = (idx) => {
+    const updated = parsedItems.filter((_, i) => i !== idx);
+    setParsedItems(updated);
+    setManualInput(updated.join('\n'));
+  };
+
+  const addBlankItem = () => {
+    const updated = [...parsedItems, ''];
+    setParsedItems(updated);
+    setManualInput(updated.join('\n'));
+    // Auto-open edit for the new blank item
+    setEditingItemIdx(updated.length - 1);
+    setEditingItemValue('');
+  };
+
+  // ─────────────────────────────────────────────────────────────────────────────
 
   const renderLogin = () => (
     <div className="flex flex-col items-center justify-center min-h-screen p-6">
@@ -196,9 +271,7 @@ export default function App() {
           <div className="space-y-1">
             <label className="text-xs font-bold text-gray-400 uppercase ml-4">Username</label>
             <input 
-              type="text"
-              required
-              className="input-field text-lg"
+              type="text" required className="input-field text-lg"
               value={loginForm.username}
               onChange={e => setLoginForm({...loginForm, username: e.target.value})}
             />
@@ -206,26 +279,16 @@ export default function App() {
           <div className="space-y-1">
             <label className="text-xs font-bold text-gray-400 uppercase ml-4">Password</label>
             <input 
-              type="password"
-              required
-              className="input-field text-lg"
+              type="password" required className="input-field text-lg"
               value={loginForm.password}
               onChange={e => setLoginForm({...loginForm, password: e.target.value})}
             />
           </div>
-          <button 
-            type="submit"
-            className="btn-primary text-lg"
-          >
-            Login
-          </button>
+          <button type="submit" className="btn-primary text-lg">Login</button>
         </form>
 
         <div className="text-center">
-          <button 
-            onClick={() => setView('signup')}
-            className="text-sm text-gray-400 transition-colors"
-          >
+          <button onClick={() => setView('signup')} className="text-sm text-gray-400 transition-colors">
             Don't have an account? Sign up
           </button>
         </div>
@@ -248,45 +311,27 @@ export default function App() {
         <form onSubmit={handleLogin} className="space-y-4">
           <div className="space-y-1">
             <label className="text-xs font-bold text-gray-400 uppercase ml-4">Username</label>
-            <input 
-              type="text"
-              required
-              className="input-field text-lg"
+            <input type="text" required className="input-field text-lg"
               value={loginForm.username}
               onChange={e => setLoginForm({...loginForm, username: e.target.value})}
             />
           </div>
           <div className="space-y-1">
             <label className="text-xs font-bold text-gray-400 uppercase ml-4">Email</label>
-            <input 
-              type="email"
-              required
-              className="input-field text-lg"
-            />
+            <input type="email" required className="input-field text-lg" />
           </div>
           <div className="space-y-1">
             <label className="text-xs font-bold text-gray-400 uppercase ml-4">Password</label>
-            <input 
-              type="password"
-              required
-              className="input-field text-lg"
+            <input type="password" required className="input-field text-lg"
               value={loginForm.password}
               onChange={e => setLoginForm({...loginForm, password: e.target.value})}
             />
           </div>
-          <button 
-            type="submit"
-            className="btn-primary text-lg"
-          >
-            Sign Up
-          </button>
+          <button type="submit" className="btn-primary text-lg">Sign Up</button>
         </form>
 
         <div className="text-center">
-          <button 
-            onClick={() => setView('login')}
-            className="text-sm text-gray-400 transition-colors"
-          >
+          <button onClick={() => setView('login')} className="text-sm text-gray-400 transition-colors">
             Already have an account? Login
           </button>
         </div>
@@ -302,9 +347,7 @@ export default function App() {
         className="w-full max-w-md space-y-8"
       >
         <div className="text-center space-y-1">
-          {/* main title */}
           <h1 className="text-5xl font-serif font-bold tracking-tight home-title">KitchIndex</h1>
-          {/* welcome message */}
           {user && (
             <h2 className="text-2xl font-sans font-medium text-gray-600 home-welcome">
               Welcome back, {user.name}
@@ -314,10 +357,7 @@ export default function App() {
         </div>
 
         <div className="grid gap-4">
-          <button 
-            onClick={() => setView('input')}
-            className="home-btn"
-          >
+          <button onClick={() => setView('input')} className="home-btn">
             <div className="flex items-center gap-4">
               <div className="icon-box" style={{ backgroundColor: 'var(--accent-color)', color: 'var(--white)' }}>
                 <Plus size={24} />
@@ -329,10 +369,7 @@ export default function App() {
             </div>
           </button>
 
-          <button 
-            onClick={() => setView('calendar')}
-            className="home-btn"
-          >
+          <button onClick={() => setView('calendar')} className="home-btn">
             <div className="flex items-center gap-4">
               <div className="icon-box text-amber-600" style={{ backgroundColor: '#fffbeb' }}>
                 <CalendarIcon size={24} />
@@ -344,13 +381,7 @@ export default function App() {
             </div>
           </button>
 
-          <button 
-            onClick={() => {
-              setUser(null);
-              setView('login');
-            }}
-            className="home-btn"
-          >
+          <button onClick={() => { setUser(null); setView('login'); }} className="home-btn">
             <div className="flex items-center gap-4">
               <div className="icon-box text-gray-600" style={{ backgroundColor: 'var(--gray-100)' }}>
                 <LogOut size={24} />
@@ -369,23 +400,39 @@ export default function App() {
   const renderInput = () => (
     <div className="min-h-screen p-6">
       <div className="max-w-md mx-auto space-y-6">
-        <button onClick={() => setView('home')} 
-        className="flex items-center gap-2 font-medium text-lg"
-        style={{ color: 'var(--accent-color)' }}>
-        <ChevronLeft size={20} /> Back to Home
+        <button
+          onClick={() => setView('home')}
+          className="flex items-center gap-2 font-medium text-lg"
+          style={{ color: 'var(--accent-color)' }}
+        >
+          <ChevronLeft size={20} /> Back to Home
         </button>
-        
+
         <h2 className="text-3xl font-serif font-bold">Create New List</h2>
-        
+
+        {/* ── List title ──────────────────────────────────────────────── */}
+        <div className="space-y-1">
+          <label className="text-xs font-bold text-gray-400 uppercase ml-1">List Name</label>
+          <input
+            type="text"
+            className="input-field text-lg"
+            value={listTitle}
+            onChange={e => setListTitle(e.target.value)}
+            placeholder="e.g. Weekly Haul"
+          />
+        </div>
+
         <div className="space-y-4">
+          {/* ── Input method selector ────────────────────────────────── */}
           <div className="card p-6 space-y-4">
             <p className="font-semibold text-gray-700 uppercase text-xs tracking-wider">Choose Input Method</p>
             <div className="flex justify-center gap-4">
-              <label className="flex flex-col items-center gap-2 p-4 rounded-2xl hover:bg-gray-50 cursor pointer">
+              <label className="flex flex-col items-center gap-2 p-4 rounded-2xl hover:bg-gray-50 cursor-pointer">
                 <input
                   type="file"
                   accept="image/*"
                   style={{ display: 'none' }}
+                  ref={fileInputRef}
                   onChange={handlePhotoUpload}
                 />
                 <div className="icon-box text-blue-600" style={{ backgroundColor: '#eff6ff' }}>
@@ -393,12 +440,7 @@ export default function App() {
                 </div>
                 <span className="text-xs font-medium">{ocrLoading ? 'Reading...' : 'Photo'}</span>
               </label>
-              {/*Commented out link as not needed when focusing on groceries, would be good for future implementation
-              <button className="flex flex-col items-center gap-2 p-4 rounded-2xl hover:bg-gray-50">
-                <div className="icon-box text-green-600" style={{ backgroundColor: '#f0fdf4' }}><LinkIcon size={24} /></div>
-                <span className="text-xs font-medium">Link</span>
-              </button>
-              */}
+
               <button className="flex flex-col items-center gap-2 p-4 rounded-2xl" style={{ backgroundColor: 'var(--gray-50)' }}>
                 <div className="icon-box text-gray-700" style={{ backgroundColor: 'var(--gray-200)' }}><Type size={24} /></div>
                 <span className="text-xs font-medium">Manual</span>
@@ -406,61 +448,116 @@ export default function App() {
             </div>
           </div>
 
-          <div className="card p-6 space-y-4">
-            <textarea 
-              placeholder="Enter items (e.g. 2 Apples, Milk, Bread)..."
-              className="w-full h-40 p-4 rounded-2xl border-none focus-ring-2 resize-none text-lg"
+          {/* ── Raw textarea ─────────────────────────────────────────── */}
+          <div className="card p-6 space-y-3">
+            <p className="font-semibold text-gray-700 uppercase text-xs tracking-wider">Type Items</p>
+            <textarea
+              placeholder="Enter items (one per line, e.g.&#10;2 Apples&#10;Milk&#10;Bread)..."
+              className="w-full h-32 p-4 rounded-2xl border-none resize-none text-sm"
               style={{ backgroundColor: 'var(--gray-50)' }}
               value={manualInput}
               onChange={(e) => setManualInput(e.target.value)}
             />
-            <button 
-              disabled={!manualInput.trim() || loading}
-              onClick={() => {
-                const items = manualInput.split('\n').filter(i => i.trim()).map(name => ({ name }));
-                handleCreateList("New Grocery List", items);
-              }}
-              className="btn-primary"
-            >
-              {loading ? 'Processing...' : 'Generate List'}
-            </button>
           </div>
+
+          {/* ── Editable parsed item list ─────────────────────────────── */}
+          {parsedItems.length > 0 && (
+            <div className="card p-6 space-y-3">
+              <div className="flex items-center justify-between">
+                <p className="font-semibold text-gray-700 uppercase text-xs tracking-wider">
+                  Review & Adjust ({parsedItems.length} item{parsedItems.length !== 1 ? 's' : ''})
+                </p>
+                <button
+                  onClick={addBlankItem}
+                  className="flex items-center gap-1 text-xs font-semibold px-3 py-1 rounded-full"
+                  style={{ backgroundColor: 'var(--accent-color)', color: 'white' }}
+                >
+                  <Plus size={12} /> Add
+                </button>
+              </div>
+
+              <AnimatePresence>
+                {parsedItems.map((item, idx) => (
+                  <motion.div
+                    key={idx}
+                    initial={{ opacity: 0, y: -8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, height: 0, marginBottom: 0 }}
+                    transition={{ duration: 0.15 }}
+                    className="flex items-center gap-2 p-3 rounded-2xl"
+                    style={{ backgroundColor: 'var(--gray-50)' }}
+                  >
+                    {editingItemIdx === idx ? (
+                      <>
+                        <input
+                          autoFocus
+                          className="flex-1 bg-white rounded-xl px-3 py-1 text-sm border-none outline-none"
+                          style={{ border: '2px solid var(--accent-color)' }}
+                          value={editingItemValue}
+                          onChange={e => setEditingItemValue(e.target.value)}
+                          onKeyDown={e => {
+                            if (e.key === 'Enter') commitEditItem(idx);
+                            if (e.key === 'Escape') { setEditingItemIdx(null); setEditingItemValue(''); }
+                          }}
+                        />
+                        <button
+                          onClick={() => commitEditItem(idx)}
+                          className="p-1 rounded-full"
+                          style={{ color: 'var(--accent-color)' }}
+                        >
+                          <Check size={16} />
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <span className="flex-1 text-sm font-medium truncate">{item || <span className="text-gray-400 italic">empty</span>}</span>
+                        <button onClick={() => startEditItem(idx)} className="p-1 text-gray-400 hover:text-gray-700">
+                          <Pencil size={14} />
+                        </button>
+                        <button onClick={() => removeItem(idx)} className="p-1 text-red-400 hover:text-red-600">
+                          <X size={14} />
+                        </button>
+                      </>
+                    )}
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </div>
+          )}
+
+          {/* ── Generate button ───────────────────────────────────────── */}
+          <button
+            disabled={parsedItems.length === 0 || loading}
+            onClick={() => {
+              const items = parsedItems.filter(Boolean).map(name => ({ name }));
+              handleCreateList(listTitle || 'New Grocery List', items);
+            }}
+            className="btn-primary"
+          >
+            {loading ? 'Processing...' : `Generate List (${parsedItems.filter(Boolean).length} items)`}
+          </button>
         </div>
       </div>
+
+      {/* ── OCR Modal ─────────────────────────────────────────────────────────── */}
       {showOcrModal && (
         <div style={{
-          position: 'fixed',
-          top: 0, left: 0, right: 0, bottom: 0,
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
           backgroundColor: 'rgba(0,0,0,0.5)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 200
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200
         }}>
           <div className="card p-8" style={{
-            width: '480px',
-            maxHeight: '80vh',
-            borderRadius: '24px',
-            backgroundColor: 'white',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '16px'
+            width: '480px', maxHeight: '80vh', borderRadius: '24px',
+            backgroundColor: 'white', display: 'flex', flexDirection: 'column', gap: '16px'
           }}>
-            {/* Header */}
             <h3 className="font-serif font-bold text-xl">Review Recipe</h3>
-        
-            {/* Recipe name input */}
+
             <div className="space-y-1">
               <label className="text-xs font-bold text-gray-400 uppercase">Recipe Name</label>
-              <input
-                type="text"
-                className="input-field"
-                value={ocrDraftLabel}
-                onChange={e => setOcrDraftLabel(e.target.value)}
-              />
+              <input type="text" className="input-field"
+                value={ocrDraftLabel} onChange={e => setOcrDraftLabel(e.target.value)} />
             </div>
-        
-            {/* Ingredients textarea */}
+
             <div className="space-y-1">
               <label className="text-xs font-bold text-gray-400 uppercase">Ingredients (one per line)</label>
               <textarea
@@ -471,12 +568,9 @@ export default function App() {
               />
             </div>
 
-            {/* Tags */}
             <div className="space-y-1">
               <label className="text-xs font-bold text-gray-400 uppercase">Tags</label>
-              <input
-                type="text"
-                placeholder="Type a tag and press Enter..."
+              <input type="text" placeholder="Type a tag and press Enter..."
                 className="input-field text-sm"
                 value={ocrTagInput}
                 onChange={e => setOcrTagInput(e.target.value)}
@@ -491,64 +585,33 @@ export default function App() {
                     fontSize: '12px', fontWeight: '600'
                   }}>
                     {tag}
-                    <span
-                      onClick={() => setOcrDraftTags(prev => prev.filter((_, idx) => idx !== i))}
-                      style={{ cursor: 'pointer', fontWeight: 'bold' }}
-                    >✕</span>
+                    <span onClick={() => setOcrDraftTags(prev => prev.filter((_, idx) => idx !== i))}
+                      style={{ cursor: 'pointer', fontWeight: 'bold' }}>✕</span>
                   </div>
                 ))}
               </div>
             </div>
-        
-            {/* Buttons */}
+
             <div style={{ display: 'flex', gap: '12px' }}>
-              <button
-                onClick={() => {
-                  setShowOcrModal(false);
-                  setOcrDraftText('');
-                  setOcrDraftLabel('');
-                  setOcrDraftTags([]);
-                  setOcrTagInput('');
-                }}
-                style={{
-                  flex: 1,
-                  padding: '12px',
-                  borderRadius: '12px',
-                  border: '2px solid var(--gray-200)',
-                  fontWeight: '600',
-                  fontSize: '14px',
-                  backgroundColor: 'white',
-                  cursor: 'pointer'
-                }}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSaveCustomRecipe}
-                style={{
-                  flex: 1,
-                  padding: '12px',
-                  borderRadius: '12px',
-                  border: 'none',
-                  fontWeight: '600',
-                  fontSize: '14px',
-                  backgroundColor: 'var(--accent-color)',
-                  color: 'white',
-                  cursor: 'pointer'
-                }}
-              >
-                Save Recipe Card
-              </button>
+              <button onClick={() => {
+                setShowOcrModal(false); setOcrDraftText('');
+                setOcrDraftLabel(''); setOcrDraftTags([]); setOcrTagInput('');
+              }} style={{
+                flex: 1, padding: '12px', borderRadius: '12px',
+                border: '2px solid var(--gray-200)', fontWeight: '600', fontSize: '14px',
+                backgroundColor: 'white', cursor: 'pointer'
+              }}>Cancel</button>
+              <button onClick={handleSaveCustomRecipe} style={{
+                flex: 1, padding: '12px', borderRadius: '12px', border: 'none',
+                fontWeight: '600', fontSize: '14px',
+                backgroundColor: 'var(--accent-color)', color: 'white', cursor: 'pointer'
+              }}>Save Recipe Card</button>
             </div>
           </div>
         </div>
-        )}
+      )}
     </div>
   );
-
-  const handleClick = () => {
-    fileInputRef.current.click();
-  };
 
   const renderListView = () => {
     if (!currentList) return null;
@@ -564,18 +627,30 @@ export default function App() {
                 <ChevronLeft size={24} />
               </button>
               <h2 className="text-xl font-bold">{currentList.title}</h2>
-              <button 
-                onClick={() => handleDeleteList(currentList.id)}
-                className="p-2 icon-box text-red-500 hover-bg-gray-100" 
-                style={{ borderRadius: '9999px' }}
-              >
-                <Trash2 size={20} />
-              </button>
+              <div className="flex items-center gap-1">
+                {/* ── Export .txt button ── */}
+                <button
+                  onClick={handleExportTxt}
+                  title="Export as .txt"
+                  className="p-2 icon-box text-gray-500 hover-bg-gray-100"
+                  style={{ borderRadius: '9999px' }}
+                >
+                  <Download size={20} />
+                </button>
+                <button
+                  onClick={() => handleDeleteList(currentList.id)}
+                  className="p-2 icon-box text-red-500 hover-bg-gray-100"
+                  style={{ borderRadius: '9999px' }}
+                >
+                  <Trash2 size={20} />
+                </button>
+              </div>
             </div>
+
             <div className="flex items-center gap-4 p-4 rounded-2xl" style={{ backgroundColor: 'var(--gray-50)' }}>
               <div className="flex-1">
                 <div className="progress-bar">
-                  <motion.div 
+                  <motion.div
                     initial={{ width: 0 }}
                     animate={{ width: totalItems > 0 ? `${(checkedItems / totalItems) * 100}%` : '0%' }}
                     className="progress-fill"
@@ -596,7 +671,7 @@ export default function App() {
         <div className="max-w-md mx-auto p-6 space-y-3">
           <AnimatePresence>
             {currentList.items?.map((item, idx) => (
-              <motion.div 
+              <motion.div
                 key={item.id}
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -622,8 +697,6 @@ export default function App() {
             ))}
           </AnimatePresence>
         </div>
-
-
       </div>
     );
   };
