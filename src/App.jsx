@@ -180,17 +180,23 @@ export default function App() {
     }
   };
 
-  // // simple TTS helper using Web Speech API
+  // Using browser's built-in Web Speech API to read text aloud
   const speak = (text) => {
-    if (typeof window === 'undefined' || !window.speechSynthesis) return;
 
+    //prevent overlap if buttom is clicked multiple times
+    if (typeof window === 'undefined' || !window.speechSynthesis) return;
+  
     window.speechSynthesis.cancel();
+    //create speech object
     const u = new SpeechSynthesisUtterance(text);
     u.rate = 1;
     u.pitch = 1;
+
+    // speaks the summary aloud 
     window.speechSynthesis.speak(u);
   };
 
+  // conversion for manual inut into speech
   const buildSummaryForManualInput = () => {
     const lines = (manualInput || '')
       .split('\n')
@@ -198,7 +204,6 @@ export default function App() {
       .filter(Boolean);
 
     if (lines.length === 0) return "You haven't entered any items yet.";
-
     const nextUp = lines.slice(0, 3).join(', ');
     return `Your list has ${lines.length} items. : ${nextUp}.`;
   };
