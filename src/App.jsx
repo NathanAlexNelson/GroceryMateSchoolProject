@@ -1,20 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-  Plus, 
-  History, 
-  LogOut, 
-  Camera, 
-  Link as LinkIcon, 
-  Type, 
-  ChevronLeft, 
-  CheckCircle2, 
+import {
+  Plus,
+  History,
+  LogOut,
+  Camera,
+  Link as LinkIcon,
+  Type,
+  ChevronLeft,
+  CheckCircle2,
   Circle,
   Trash2,
   Calendar as CalendarIcon
 } from 'lucide-react';
 import Calendar from './components/Calendar';
-import {runOCR } from './components/ocr';
+import { runOCR } from './components/ocr';
 
 export default function App() {
   const [view, setView] = useState('login');
@@ -153,7 +153,7 @@ export default function App() {
       if (currentList) {
         setCurrentList({
           ...currentList,
-          items: currentList.items?.map(item => 
+          items: currentList.items?.map(item =>
             item.id === itemId ? { ...item, is_checked: !currentStatus } : item
           )
         });
@@ -180,9 +180,36 @@ export default function App() {
     }
   };
 
+  // // simple TTS helper using Web Speech API
+  const speak = (text) => {
+    if (typeof window === 'undefined' || !window.speechSynthesis) return;
+
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.rate = 1;
+    u.pitch = 1;
+    window.speechSynthesis.speak(u);
+  };
+
+  const buildSummaryForManualInput = () => {
+    const lines = (manualInput || '')
+      .split('\n')
+      .map((s) => s.trim())
+      .filter(Boolean);
+
+    if (lines.length === 0) return "You haven't entered any items yet.";
+
+    const nextUp = lines.slice(0, 3).join(', ');
+    return `Your list has ${lines.length} items. : ${nextUp}.`;
+  };
+
+  const handleSpeakSummary = () => {
+    speak(buildSummaryForManualInput());
+  };
+
   const renderLogin = () => (
     <div className="flex flex-col items-center justify-center min-h-screen p-6">
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         className="w-full max-w-sm card p-8 space-y-8"
@@ -195,25 +222,25 @@ export default function App() {
         <form onSubmit={handleLogin} className="space-y-4">
           <div className="space-y-1">
             <label className="text-xs font-bold text-gray-400 uppercase ml-4">Username</label>
-            <input 
+            <input
               type="text"
               required
               className="input-field text-lg"
               value={loginForm.username}
-              onChange={e => setLoginForm({...loginForm, username: e.target.value})}
+              onChange={e => setLoginForm({ ...loginForm, username: e.target.value })}
             />
           </div>
           <div className="space-y-1">
             <label className="text-xs font-bold text-gray-400 uppercase ml-4">Password</label>
-            <input 
+            <input
               type="password"
               required
               className="input-field text-lg"
               value={loginForm.password}
-              onChange={e => setLoginForm({...loginForm, password: e.target.value})}
+              onChange={e => setLoginForm({ ...loginForm, password: e.target.value })}
             />
           </div>
-          <button 
+          <button
             type="submit"
             className="btn-primary text-lg"
           >
@@ -222,7 +249,7 @@ export default function App() {
         </form>
 
         <div className="text-center">
-          <button 
+          <button
             onClick={() => setView('signup')}
             className="text-sm text-gray-400 transition-colors"
           >
@@ -235,7 +262,7 @@ export default function App() {
 
   const renderSignup = () => (
     <div className="flex flex-col items-center justify-center min-h-screen p-6">
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         className="w-full max-w-sm card p-8 space-y-8"
@@ -248,17 +275,17 @@ export default function App() {
         <form onSubmit={handleLogin} className="space-y-4">
           <div className="space-y-1">
             <label className="text-xs font-bold text-gray-400 uppercase ml-4">Username</label>
-            <input 
+            <input
               type="text"
               required
               className="input-field text-lg"
               value={loginForm.username}
-              onChange={e => setLoginForm({...loginForm, username: e.target.value})}
+              onChange={e => setLoginForm({ ...loginForm, username: e.target.value })}
             />
           </div>
           <div className="space-y-1">
             <label className="text-xs font-bold text-gray-400 uppercase ml-4">Email</label>
-            <input 
+            <input
               type="email"
               required
               className="input-field text-lg"
@@ -266,15 +293,15 @@ export default function App() {
           </div>
           <div className="space-y-1">
             <label className="text-xs font-bold text-gray-400 uppercase ml-4">Password</label>
-            <input 
+            <input
               type="password"
               required
               className="input-field text-lg"
               value={loginForm.password}
-              onChange={e => setLoginForm({...loginForm, password: e.target.value})}
+              onChange={e => setLoginForm({ ...loginForm, password: e.target.value })}
             />
           </div>
-          <button 
+          <button
             type="submit"
             className="btn-primary text-lg"
           >
@@ -283,7 +310,7 @@ export default function App() {
         </form>
 
         <div className="text-center">
-          <button 
+          <button
             onClick={() => setView('login')}
             className="text-sm text-gray-400 transition-colors"
           >
@@ -296,7 +323,7 @@ export default function App() {
 
   const renderHome = () => (
     <div className="flex flex-col items-center justify-center min-h-screen p-6">
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="w-full max-w-md space-y-8"
@@ -314,7 +341,7 @@ export default function App() {
         </div>
 
         <div className="grid gap-4">
-          <button 
+          <button
             onClick={() => setView('input')}
             className="home-btn"
           >
@@ -329,7 +356,7 @@ export default function App() {
             </div>
           </button>
 
-          <button 
+          <button
             onClick={() => setView('calendar')}
             className="home-btn"
           >
@@ -344,7 +371,7 @@ export default function App() {
             </div>
           </button>
 
-          <button 
+          <button
             onClick={() => {
               setUser(null);
               setView('login');
@@ -369,14 +396,14 @@ export default function App() {
   const renderInput = () => (
     <div className="min-h-screen p-6">
       <div className="max-w-md mx-auto space-y-6">
-        <button onClick={() => setView('home')} 
-        className="flex items-center gap-2 font-medium text-lg"
-        style={{ color: 'var(--accent-color)' }}>
-        <ChevronLeft size={20} /> Back to Home
+        <button onClick={() => setView('home')}
+          className="flex items-center gap-2 font-medium text-lg"
+          style={{ color: 'var(--accent-color)' }}>
+          <ChevronLeft size={20} /> Back to Home
         </button>
-        
+
         <h2 className="text-3xl font-serif font-bold">Create New List</h2>
-        
+
         <div className="space-y-4">
           <div className="card p-6 space-y-4">
             <p className="font-semibold text-gray-700 uppercase text-xs tracking-wider">Choose Input Method</p>
@@ -407,14 +434,25 @@ export default function App() {
           </div>
 
           <div className="card p-6 space-y-4">
-            <textarea 
+            <textarea
               placeholder="Enter items (e.g. 2 Apples, Milk, Bread)..."
               className="w-full h-40 p-4 rounded-2xl border-none focus-ring-2 resize-none text-lg"
               style={{ backgroundColor: 'var(--gray-50)' }}
               value={manualInput}
               onChange={(e) => setManualInput(e.target.value)}
             />
-            <button 
+
+            <button
+              type="button"
+              onClick={handleSpeakSummary}
+              disabled={!manualInput.trim()}
+              className="btn-primary"
+              style={{ backgroundColor: 'var(--gray-200)', color: 'var(--gray-800)' }}
+            >
+              Speak Summary
+            </button>
+
+            <button
               disabled={!manualInput.trim() || loading}
               onClick={() => {
                 const items = manualInput.split('\n').filter(i => i.trim()).map(name => ({ name }));
@@ -448,7 +486,7 @@ export default function App() {
           }}>
             {/* Header */}
             <h3 className="font-serif font-bold text-xl">Review Recipe</h3>
-        
+
             {/* Recipe name input */}
             <div className="space-y-1">
               <label className="text-xs font-bold text-gray-400 uppercase">Recipe Name</label>
@@ -459,7 +497,7 @@ export default function App() {
                 onChange={e => setOcrDraftLabel(e.target.value)}
               />
             </div>
-        
+
             {/* Ingredients textarea */}
             <div className="space-y-1">
               <label className="text-xs font-bold text-gray-400 uppercase">Ingredients (one per line)</label>
@@ -499,7 +537,7 @@ export default function App() {
                 ))}
               </div>
             </div>
-        
+
             {/* Buttons */}
             <div style={{ display: 'flex', gap: '12px' }}>
               <button
@@ -542,13 +580,13 @@ export default function App() {
             </div>
           </div>
         </div>
-        )}
+      )}
     </div>
   );
 
-  const handleClick = () => {
-    fileInputRef.current.click();
-  };
+  // const handleClick = () => {
+  //   fileInputRef.current.click();
+  // };
 
   const renderListView = () => {
     if (!currentList) return null;
@@ -564,9 +602,9 @@ export default function App() {
                 <ChevronLeft size={24} />
               </button>
               <h2 className="text-xl font-bold">{currentList.title}</h2>
-              <button 
+              <button
                 onClick={() => handleDeleteList(currentList.id)}
-                className="p-2 icon-box text-red-500 hover-bg-gray-100" 
+                className="p-2 icon-box text-red-500 hover-bg-gray-100"
                 style={{ borderRadius: '9999px' }}
               >
                 <Trash2 size={20} />
@@ -575,7 +613,7 @@ export default function App() {
             <div className="flex items-center gap-4 p-4 rounded-2xl" style={{ backgroundColor: 'var(--gray-50)' }}>
               <div className="flex-1">
                 <div className="progress-bar">
-                  <motion.div 
+                  <motion.div
                     initial={{ width: 0 }}
                     animate={{ width: totalItems > 0 ? `${(checkedItems / totalItems) * 100}%` : '0%' }}
                     className="progress-fill"
@@ -596,7 +634,7 @@ export default function App() {
         <div className="max-w-md mx-auto p-6 space-y-3">
           <AnimatePresence>
             {currentList.items?.map((item, idx) => (
-              <motion.div 
+              <motion.div
                 key={item.id}
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
